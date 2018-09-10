@@ -72,25 +72,6 @@ class IssuesViewController: BaseViewController, View {
     func bind(reactor: Reactor) {
 
         
-        NotificationCenter.default.rx.notification(Notification.Name.NewIssuePosted, object: nil)
-            .map { [weak self] _ -> Reactor.Action in
-                guard let owner = self?.owner, let repo = self?.repo else { return Reactor.Action.refresh(owner: "", repo: "") }
-                return Reactor.Action.refresh(owner: owner, repo: repo)
-        }.bind(to: reactor.action).disposed(by: self.disposeBag)
-        
-        NotificationCenter.default.rx.notification(Notification.Name.IssueStateToggled)
-            .map({ (noti) -> Reactor.Action in
-                guard let userInfo = noti.userInfo else { return Reactor.Action.noAction }
-                guard let newIssue = userInfo["newIssue"] as? Model.Issue else { return Reactor.Action.noAction }
-                guard let index = reactor.currentState.sections[0].items.index(where: { (reactor) -> Bool in
-                    return reactor.currentState.id == newIssue.id
-                }) else { return Reactor.Action.noAction }
-                
-                return Reactor.Action.updateIssue(updatedIssue: newIssue, indexPath: IndexPath(item: index, section: 0))
-            }).bind(to: reactor.action).disposed(by: self.disposeBag)
-        
-        
-        
         self.collectionView.rx.setDelegate(self).disposed(by: self.disposeBag)
         
         self.rx.viewDidLoad.map { [weak self] _ -> Reactor.Action in
@@ -111,7 +92,7 @@ class IssuesViewController: BaseViewController, View {
         
         self.addButton.rx.tap.subscribe(onNext: { [weak self] _ in
             guard let repo = self?.repo, let owner = self?.owner else { return }
-            let githubService = GithubService()
+            let githubService = reactor.githubService
             let reactor = PostIssueViewReactor(githubService: githubService)
             let postIssueView = PostIssueViewController(reactor: reactor, owner: owner, repo: repo)
             let postIssueNavi = UINavigationController(rootViewController: postIssueView)
@@ -121,9 +102,9 @@ class IssuesViewController: BaseViewController, View {
         self.collectionView.rx.itemSelected.asObservable().subscribe(onNext: { [weak self] (indexPath) in
             guard let owner = self?.owner, let repo = self?.repo else { return }
             let issue = reactor.currentState.sections[indexPath.section].items[indexPath.item].initialState
-            let githubService = GithubService()
+            guard let githubService = self?.reactor?.githubService else { return }
             let reactor = CommentsViewReactor(githubService: githubService)
-            let commentView = CommentsViewController(reactor: reactor, owner: owner, repo: repo, issue: issue)
+            let commentView = CommentsViewController(reactor: reactor, owner: owner, repo: repo, issue: issue, indexPath: indexPath)
             self?.navigationController?.pushViewController(commentView, animated: true)
         }).disposed(by: self.disposeBag)
         

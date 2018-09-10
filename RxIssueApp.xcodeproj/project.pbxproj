@@ -50,7 +50,6 @@
 		5BFD57EF21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57EE21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift */; };
 		5BFD57F12141165A0014AEA0 /* PostIssueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F02141165A0014AEA0 /* PostIssueViewController.swift */; };
 		5BFD57F3214116630014AEA0 /* PostIssueViewReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F2214116630014AEA0 /* PostIssueViewReactor.swift */; };
-		5BFD57F521411DF80014AEA0 /* NotificationCenter+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F421411DF80014AEA0 /* NotificationCenter+Extension.swift */; };
 		5BFD57F7214147BE0014AEA0 /* MarkDownViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F6214147BE0014AEA0 /* MarkDownViewController.swift */; };
 		5BFD57F92141487C0014AEA0 /* MakrDownViewReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F82141487C0014AEA0 /* MakrDownViewReactor.swift */; };
 		89296F1AC5A4C10C53CC0BBF /* Pods_RxIssueApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B99C1EB4AC33FA38B70E27E8 /* Pods_RxIssueApp.framework */; };
@@ -103,7 +102,6 @@
 		5BFD57EE21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SnapKit+KeyboardConstraints.swift"; sourceTree = "<group>"; };
 		5BFD57F02141165A0014AEA0 /* PostIssueViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIssueViewController.swift; sourceTree = "<group>"; };
 		5BFD57F2214116630014AEA0 /* PostIssueViewReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIssueViewReactor.swift; sourceTree = "<group>"; };
-		5BFD57F421411DF80014AEA0 /* NotificationCenter+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extension.swift"; sourceTree = "<group>"; };
 		5BFD57F6214147BE0014AEA0 /* MarkDownViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkDownViewController.swift; sourceTree = "<group>"; };
 		5BFD57F82141487C0014AEA0 /* MakrDownViewReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakrDownViewReactor.swift; sourceTree = "<group>"; };
 		B99C1EB4AC33FA38B70E27E8 /* Pods_RxIssueApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RxIssueApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -226,7 +224,6 @@
 				5B10EA922140E1A60083292C /* UIScrollView+ScrollToBottom.swift */,
 				5B10EAA92140F7BF0083292C /* Encodable+Extension.swift */,
 				5BFD57EE21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift */,
-				5BFD57F421411DF80014AEA0 /* NotificationCenter+Extension.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -452,7 +449,6 @@
 				5B10EAA02140EAA50083292C /* CommentsViewReactor.swift in Sources */,
 				5B10EAA62140EE4B0083292C /* CommentsCell.swift in Sources */,
 				5B0F7072213F9BE800549016 /* BaseViewController.swift in Sources */,
-				5BFD57F521411DF80014AEA0 /* NotificationCenter+Extension.swift in Sources */,
 				5B10EA8721403B9F0083292C /* IssuesViewReactor.swift in Sources */,
 				5B0F705A213F980A00549016 /* AppDelegate.swift in Sources */,
 				5B10EA982140E6580083292C /* LoadMoreCell.swift in Sources */,

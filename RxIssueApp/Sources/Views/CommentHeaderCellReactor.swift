@@ -29,25 +29,34 @@ class CommentHeaderCellReactor: Reactor {
             if issue.state == .closed {
                 let updatedIssue = issue.update(state: Model.Issue.State.open)
                 return self.githubService.toggleIssueState(owner: self.owner, repo: self.repo, number: issue.number, issue: updatedIssue)
-                    .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
-                        return Observable.just(Mutation.toggleState(issue))
+                    .flatMap({ _ -> Observable<Mutation> in
+                        return .empty()
                     })
+//                    .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
+//                        return Observable.just(Mutation.toggleState(issue))
+//                    })
                 
             } else {
                 let updatedIssue = issue.update(state: Model.Issue.State.closed)
                 return self.githubService.toggleIssueState(owner: self.owner, repo: self.repo, number: issue.number, issue: updatedIssue)
-                    .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
-                        return Observable.just(Mutation.toggleState(issue))
+                    .flatMap({ _ -> Observable<Mutation> in
+                        return .empty()
                     })
+//                    .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
+//                        return Observable.just(Mutation.toggleState(issue))
+//                    })
             }
             
         }
     }
     
+    
+ 
     func reduce(state: Model.Issue, mutation: CommentHeaderCellReactor.Mutation) -> Model.Issue {
         var state = state
         switch mutation {
         case let .toggleState(updatedIssue):
+            print(updatedIssue)
             state = updatedIssue
             return state
         }

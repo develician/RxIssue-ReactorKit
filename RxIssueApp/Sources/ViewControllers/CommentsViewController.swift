@@ -22,13 +22,15 @@ class CommentsViewController: BaseViewController, View {
     var owner: String!
     var repo: String!
     var issue: Model.Issue!
+    var indexPath: IndexPath!
     
-    init(reactor: Reactor, owner: String, repo: String, issue: Model.Issue) {
+    init(reactor: Reactor, owner: String, repo: String, issue: Model.Issue, indexPath: IndexPath) {
         super.init()
         self.reactor = reactor
         self.owner = owner
         self.repo = repo
         self.issue = issue
+        self.indexPath = indexPath
     }
     
     
@@ -122,49 +124,37 @@ class CommentsViewController: BaseViewController, View {
     }
     
     func bind(reactor: Reactor) {
-        
-        NotificationCenter.default.rx.notification(Notification.Name.IssueStateToggled)
-            .subscribe(onNext: { [weak self] (noti) in
-                guard let userInfo = noti.userInfo else { return }
-                guard let newIssue = userInfo["newIssue"] as? Model.Issue else { return }
 
-                self?.issue = newIssue
-            }).disposed(by: self.disposeBag)
-        
-        NotificationCenter.default.rx.notification(Notification.Name.CommentDeleted)
-            .flatMap({ [weak self] _ -> Observable<(String, String, Int)> in
-                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
-                return Observable.just((owner, repo, number))
-            })
-            .map { (owner, repo, number) -> Reactor.Action in
-                return Reactor.Action.refresh(owner: owner, repo: repo, number: number)
-        }.bind(to: reactor.action).disposed(by: self.disposeBag)
-        
-        NotificationCenter.default.rx.notification(Notification.Name.CommentUpdated)
-            .flatMap({ [weak self] _ -> Observable<(String, String, Int)> in
-                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
-                return Observable.just((owner, repo, number))
-            })
-            .map { (owner, repo, number) -> Reactor.Action in
-                return Reactor.Action.refresh(owner: owner, repo: repo, number: number)
-            }.bind(to: reactor.action).disposed(by: self.disposeBag)
-        
         self.collectionView.rx.setDelegate(self).disposed(by: self.disposeBag)
         
-        self.rx.viewDidLoad.map { [weak self] _ -> Reactor.Action in
-            guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return Reactor.Action.refresh(owner: "", repo: "", number: 0) }
-            return Reactor.Action.refresh(owner: owner, repo: repo, number: number)
+        self.rx.viewDidLoad
+            .flatMap({ [weak self] _ -> Observable<(String, String, Int, Model.Issue)> in
+                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
+                    guard let issue = self?.issue else { return .empty() }
+                    return Observable.just((owner, repo, number, issue))
+            })
+            .map { (owner, repo, number, issue) -> Reactor.Action in
+            return Reactor.Action.refresh(owner: owner, repo: repo, number: number, issue: issue)
         }.bind(to: reactor.action).disposed(by: self.disposeBag)
         
-        self.collectionView.rx.isReachedBottom.map { [weak self] _ -> Reactor.Action in
-            guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return Reactor.Action.refresh(owner: "", repo: "", number: 0) }
+        self.collectionView.rx.isReachedBottom
+            .flatMap({ [weak self] _ -> Observable<(String, String, Int, Model.Issue)> in
+                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
+                guard let issue = self?.issue else { return .empty() }
+                return Observable.just((owner, repo, number, issue))
+            })
+            .map { (owner, repo, number, issue) -> Reactor.Action in
             return Reactor.Action.loadMore(owner: owner, repo: repo, number: number)
         }.bind(to: reactor.action).disposed(by: self.disposeBag)
         
         self.refreshControl.rx.controlEvent(.valueChanged)
-            .map { [weak self] _ -> Reactor.Action in
-                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return Reactor.Action.refresh(owner: "", repo: "", number: 0) }
-                return Reactor.Action.refresh(owner: owner, repo: repo, number: number)
+            .flatMap({ [weak self] _ -> Observable<(String, String, Int, Model.Issue)> in
+                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
+                guard let issue = self?.issue else { return .empty() }
+                return Observable.just((owner, repo, number, issue))
+            })
+            .map { (owner, repo, number, issue) -> Reactor.Action in
+                return Reactor.Action.refresh(owner: owner, repo: repo, number: number, issue: issue)
         }.bind(to: reactor.action).disposed(by: self.disposeBag)
         
         self.inputField.rx.text.flatMap { (comment) -> Observable<String> in
@@ -177,19 +167,25 @@ class CommentsViewController: BaseViewController, View {
         self.collectionView.rx.itemSelected.asObservable().subscribe(onNext: { [weak self] (indexPath) in
             let commentReactor = reactor.currentState.sections[indexPath.section].items[indexPath.item]
             let comment = commentReactor.currentState
-            let githubService = GithubService()
+            let githubService = reactor.githubService
             let reactor = MarkDownViewReactor(githubService: githubService)
             guard let owner = self?.owner, let repo = self?.repo else { return }
-            let markDownView = MarkDownViewController(reactor: reactor, comment: comment, owner: owner, repo: repo)
+            guard let parentIndexPath = self?.indexPath else { return }
+            let markDownView = MarkDownViewController(reactor: reactor, comment: comment, owner: owner, repo: repo, indexPath: indexPath, parentIndexPath: parentIndexPath)
             self?.navigationController?.pushViewController(markDownView, animated: true)
         }).disposed(by: self.disposeBag)
         
         self.sendButton.rx.tap
-            .map { [weak self] (comment) -> Reactor.Action in
-                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return Reactor.Action.refresh(owner: "", repo: "", number: 0) }
+            .flatMap({ [weak self] _ -> Observable<(String, String, Int, String)> in
+                guard let owner = self?.owner, let repo = self?.repo, let number = self?.issue.number else { return .empty() }
                 let comment = reactor.currentState.comment
+                return Observable.just((owner, repo, number, comment))
+            })
+            .map({ (owner, repo, number, comment) -> Reactor.Action in
                 return Reactor.Action.postComment(owner: owner, repo: repo, number: number, comment: comment)
-            }.bind(to: reactor.action).disposed(by: self.disposeBag)
+            })
+            .bind(to: reactor.action).disposed(by: self.disposeBag)
+        
         
         reactor.state.map { $0.sections }
             .bind(to: self.collectionView.rx.items(dataSource: self.createDataSource()))
@@ -202,6 +198,16 @@ class CommentsViewController: BaseViewController, View {
         reactor.state.map { $0.comment }
             .distinctUntilChanged()
             .bind(to: self.inputField.rx.text)
+            .disposed(by: self.disposeBag)
+        
+        reactor.state.map { $0.issue }
+            .filter { (issue: Model.Issue?) -> Bool in
+                guard let _ = issue else { return false }
+                return true
+            }.subscribe(onNext: { [weak self] (issue) in
+                guard let issue = issue else { return }
+                self?.issue = issue
+            })
             .disposed(by: self.disposeBag)
         
         
@@ -218,7 +224,7 @@ class CommentsViewController: BaseViewController, View {
                 let headerView = collectionView.dequeue(Reusable.headerCell, kind: kind, for: indexPath)
                 guard let issue = self?.issue else { return UICollectionReusableView() }
                 guard let owner = self?.owner, let repo = self?.repo else { return headerView }
-                let service = GithubService()
+                guard let service = self?.reactor?.githubService else { return headerView }
                 headerView.reactor = CommentHeaderCellReactor(issue: issue, githubService: service, owner: owner, repo: repo)
                 return headerView
             case UICollectionElementKindSectionFooter:

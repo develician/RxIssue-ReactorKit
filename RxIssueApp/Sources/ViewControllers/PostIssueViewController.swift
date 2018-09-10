@@ -126,10 +126,6 @@ class PostIssueViewController: BaseViewController, View {
             .distinctUntilChanged()
             .filter { $0 }
             .subscribe(onNext: { [weak self] _ in
-                guard let newIssue = reactor.currentState.newIssue else { return }
-                NotificationCenter.default.post(name: NSNotification.Name.NewIssuePosted, object: nil, userInfo: [
-                    "newIssue": newIssue
-                    ])
                 self?.dismiss(animated: true, completion: nil)
             })
             .disposed(by: self.disposeBag)

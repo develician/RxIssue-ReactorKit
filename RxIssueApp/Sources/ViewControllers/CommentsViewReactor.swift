@@ -21,15 +21,14 @@ class CommentsViewReactor: Reactor {
     }
     
     enum Action {
-        case refresh(owner: String, repo: String, number: Int)
+        case refresh(owner: String, repo: String, number: Int, issue: Model.Issue)
         case loadMore(owner: String, repo: String, number: Int)
         case postComment(owner: String, repo: String, number: Int, comment: String)
         case updateComment(String)
-//        case updateIssue(updatedIssue: Model.Issue, indexPath: IndexPath, owner: String, repo: String)
-//        case editIssue(owner: String, repo: String, number: Int, updatedIssue: Model.Issue)
     }
     
     struct State {
+        var issue: Model.Issue? = nil
         var sections: [CommentSectionModel] = []
         var nextPage: Int = 1
         var isRefreshing: Bool = false
@@ -40,14 +39,14 @@ class CommentsViewReactor: Reactor {
     }
 
     enum Mutation {
-        case setSections([CommentSectionModel])
+        case setSections([CommentSectionModel], Model.Issue)
         case setRefreshing(Bool)
         case setLoading(Bool)
         case addSectionItems([CommentSectionModel])
         case setNewComment(Model.Comment)
         case updateComment(String)
-//        case updateIssue(Model.Issue, IndexPath, String, String)
-//        case toggleIssue(Model.Issue)
+        case toggleIssue(Model.Issue)
+        case deleteComment(IndexPath)
     }
 
     var initialState: State = State()
@@ -55,12 +54,12 @@ class CommentsViewReactor: Reactor {
 
     func mutate(action: Action) -> Observable<Mutation> {
         switch action {
-        case let .refresh(owner, repo, number):
+        case let .refresh(owner, repo, number, issue):
             let commentsObservable = self.githubService.issueComment(pageID: 1, owner: owner, repo: repo, number: number)
                 .flatMap({ (comments: [Model.Comment]) -> Observable<Mutation> in
                     let sectionItems = comments.map(CommentsCellReactor.init)
                     let section = CommentSectionModel(model: 0, items: sectionItems)
-                    return Observable.just(Mutation.setSections([section]))
+                    return Observable.just(Mutation.setSections([section], issue))
                 })
             return Observable.concat([
                     Observable.just(Mutation.setRefreshing(true)),
@@ -85,26 +84,41 @@ class CommentsViewReactor: Reactor {
                 ])
         case let .postComment(owner, repo, number, comment):
             return self.githubService.postComment(owner: owner, repo: repo, number: number, comment: comment)
-                .flatMap({ (comment: Model.Comment) -> Observable<Mutation> in
-                    return Observable.just(Mutation.setNewComment(comment))
+                .flatMap({ _ -> Observable<Mutation> in
+                    return .empty()
                 })
         case let .updateComment(comment):
             return Observable.just(Mutation.updateComment(comment))
-
-//        case let .updateIssue(updatedIssue, indexPath, owner, repo):
-//            return Observable.just(Mutation.updateIssue(updatedIssue, indexPath, owner, repo))
-//        case let .editIssue(owner, repo, number, updatedIssue):
-//            return self.githubService.toggleIssueState(owner: owner, repo: repo, number: number, issue: updatedIssue)
-//                .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
-//                    return Observable.just(Mutation.toggleIssue(issue))
-//                })
         }
     }
 
+    func transform(mutation: Observable<Mutation>) -> Observable<Mutation> {
+        let githubEventMutation = self.githubService.githubEvent.flatMap { [weak self] (githubEvent: GithubEvent) -> Observable<Mutation> in
+            self?.mutate(githubEvent: githubEvent) ?? .empty()
+        }
+        
+        return Observable.of(mutation, githubEventMutation).merge()
+    }
+    
+    private func mutate(githubEvent: GithubEvent) -> Observable<Mutation> {
+        let state = self.currentState
+        switch githubEvent {
+        case .postComment(let comment):
+            return Observable.just(Mutation.setNewComment(comment))
+        case .toggleIssue(let issue):
+            return Observable.just(Mutation.toggleIssue(issue))
+        case .deleteComment(let indexPath, _):
+            return Observable.just(Mutation.deleteComment(indexPath))
+        default:
+            return .empty()
+        }
+    }
+    
     func reduce(state: State, mutation: Mutation) -> State {
         var state = state
         switch mutation {
-        case let .setSections(sections):
+        case let .setSections(sections, issue):
+            state.issue = issue
             state.sections = sections
             state.nextPage = 2
             state.reachedLastPage = false
@@ -128,16 +142,22 @@ class CommentsViewReactor: Reactor {
             let reactor = CommentsCellReactor(comment: comment)
             state.sections[0].items.append(reactor)
             state.comment = ""
+            guard let currentCount = state.issue?.comments else { return state }
+            guard let newIssue = state.issue?.update(commentsCount: currentCount + 1) else { return state }
+            state.issue = newIssue
             return state
         case let .updateComment(comment):
             state.comment = comment
             return state
-//        case let .updateIssue(updatedIssue, indexPath, owner, repo):
-//            state.sections[indexPath.section].items[indexPath.item] = reactor
-//            return state
-//        case let .toggleIssue(issue):
-//            state.toggledIssue = issue
-//            return state
+        case .toggleIssue(let issue):
+            state.issue = issue
+            return state
+        case .deleteComment(let indexPath):
+            state.sections[indexPath.section].items.remove(at: indexPath.item)
+            guard let comments = state.issue?.comments else { return state }
+            guard let newIssue = state.issue?.update(commentsCount: comments - 1) else { return state }
+            state.issue = newIssue
+            return state
         }
     }
 

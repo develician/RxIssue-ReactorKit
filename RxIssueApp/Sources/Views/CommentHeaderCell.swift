@@ -231,9 +231,6 @@ class CommentHeaderCell: BaseReusableView, View {
             guard let `self` = self else { return }
             self.stateButton.backgroundColor = issue.state.color
             self.stateButton.setTitle("\(issue.state.rawValue)", for: UIControlState.normal)
-            NotificationCenter.default.post(name: NSNotification.Name.IssueStateToggled, object: nil, userInfo: [
-                "newIssue": issue
-                ])
         }).disposed(by: self.disposeBag)
         
     }

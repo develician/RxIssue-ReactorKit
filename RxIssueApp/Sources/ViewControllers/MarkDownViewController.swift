@@ -18,13 +18,15 @@ import RxCocoa
 class MarkDownViewController: BaseViewController, View {
     typealias Reactor = MarkDownViewReactor
     
-    init(reactor: Reactor, comment: Model.Comment, owner: String, repo: String) {
+    init(reactor: Reactor, comment: Model.Comment, owner: String, repo: String, indexPath: IndexPath, parentIndexPath: IndexPath) {
         super.init()
         
         self.reactor = reactor
         self.comment = comment
         self.owner = owner
         self.repo = repo
+        self.indexPath = indexPath
+        self.parentIndexPath = parentIndexPath
     }
     
     required convenience init?(coder aDecoder: NSCoder) {
@@ -34,6 +36,8 @@ class MarkDownViewController: BaseViewController, View {
     var comment: Model.Comment!
     var owner: String!
     var repo: String!
+    var indexPath: IndexPath!
+    var parentIndexPath: IndexPath!
     
     let downView = try? DownView(frame: .zero, markdownString: "")
     
@@ -42,7 +46,6 @@ class MarkDownViewController: BaseViewController, View {
     let provider = ServiceProvider()
     
     var deleteFlag: BehaviorRelay<Bool> = BehaviorRelay(value: false)
-//    var updateFlag: BehaviorRelay<Bool> = BehaviorRelay(value: false)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -78,9 +81,6 @@ class MarkDownViewController: BaseViewController, View {
         
         self.editButton.rx.tap.subscribe(onNext: { [weak self] _ in
             let alert = UIAlertController(title: nil, message: nil, preferredStyle: UIAlertControllerStyle.actionSheet)
-//            alert.addAction(UIAlertAction(title: "Edit", style: UIAlertActionStyle.default, handler: { _ in
-//                self?.updateFlag.accept(true)
-//            }))
             alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { [weak self] _ in
                 self?.deleteFlag.accept(true)
             }))
@@ -91,14 +91,14 @@ class MarkDownViewController: BaseViewController, View {
         self.deleteFlag
             .distinctUntilChanged()
             .filter { $0 }
-            .flatMap({ [weak self] _ -> Observable<(String, String, Int)> in
+            .flatMap({ [weak self] _ -> Observable<(String, String, Int, IndexPath, IndexPath)> in
                 guard let owner = self?.owner, let repo = self?.repo else { return .empty() }
                 guard let commentId = self?.comment.id else { return .empty() }
-                return Observable.just((owner, repo, commentId))
+                guard let indexPath = self?.indexPath, let parentIndexPath = self?.parentIndexPath else { return .empty() }
+                return Observable.just((owner, repo, commentId, indexPath, parentIndexPath))
             })
-            .map { (owner, repo, commentId) -> Reactor.Action in
-                
-                return Reactor.Action.deleteComment(owner: owner, repo: repo, commentId: commentId)
+            .map { (owner, repo, commentId, indexPath, parentIndexPath) -> Reactor.Action in
+                return Reactor.Action.deleteComment(owner: owner, repo: repo, commentId: commentId, indexPath: indexPath, parentIndexPath: parentIndexPath)
         }.bind(to: reactor.action).disposed(by: self.disposeBag)
         
         
@@ -118,23 +118,10 @@ class MarkDownViewController: BaseViewController, View {
             .filter { $0 }
             .subscribe(onNext: { [weak self] _ in
                 self?.deleteFlag.accept(false)
-                NotificationCenter.default.post(name: NSNotification.Name.CommentDeleted, object: nil)
                 self?.navigationController?.popViewController(animated: true)
             })
             .disposed(by: self.disposeBag)
         
-//        reactor.state.map { $0.updated }
-//            .distinctUntilChanged()
-//            .filter { $0 }
-//            .subscribe(onNext: { [weak self] _ in
-//                self?.updateFlag.accept(false)
-//                guard let updatedComment = reactor.currentState.updatedComment else { return }
-//                NotificationCenter.default.post(name: NSNotification.Name.CommentUpdated, object: nil, userInfo: [
-//                    "updatedComment": updatedComment
-//                    ])
-//                self?.navigationController?.popViewController(animated: true)
-//            })
-//            .disposed(by: self.disposeBag)
     }
     
     

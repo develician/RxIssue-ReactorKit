@@ -41,6 +41,9 @@ class IssuesViewReactor: Reactor {
         case setRefreshing(Bool)
         case addIssues([IssueCellReactor])
         case updateIssue(Model.Issue, IndexPath)
+        case toggleIssue(Model.Issue)
+        case postIssue(Model.Issue)
+        case deleteComment(IndexPath, IndexPath)
     }
     
     var initialState: State = State()
@@ -82,6 +85,27 @@ class IssuesViewReactor: Reactor {
         }
     }
 
+    func transform(mutation: Observable<Mutation>) -> Observable<Mutation> {
+        let githubEventMutation = self.githubService.githubEvent.flatMap { [weak self] (githubEvent: GithubEvent) -> Observable<Mutation> in
+            self?.mutate(githubEvent: githubEvent) ?? .empty()
+        }
+        
+        return Observable.of(mutation, githubEventMutation).merge()
+    }
+    
+    private func mutate(githubEvent: GithubEvent) -> Observable<Mutation> {
+        let state = self.currentState
+        switch githubEvent {
+        case .toggleIssue(let issue):
+            return Observable.just(Mutation.toggleIssue(issue))
+        case .postIssue(let issue):
+            return Observable.just(Mutation.postIssue(issue))
+        case .deleteComment(let indexPath, let parentIndexPath):
+            return Observable.just(Mutation.deleteComment(indexPath, parentIndexPath))
+        default:
+            return .empty()
+        }
+    }
     
 
     func reduce(state: State, mutation: Mutation) -> State {
@@ -110,6 +134,23 @@ class IssuesViewReactor: Reactor {
         case let .updateIssue(updatedIssue, indexPath):
             let reactor = IssueCellReactor(issue: updatedIssue)
             state.sections[indexPath.section].items[indexPath.item] = reactor
+            return state
+        case .toggleIssue(let issue):
+            guard let index = state.sections[0].items.index(where: { (reactor) -> Bool in
+                return reactor.currentState.id == issue.id
+            }) else { return state }
+            let issueCellReactor = IssueCellReactor(issue: issue)
+            state.sections[0].items[index] = issueCellReactor
+            return state
+        case .postIssue(let issue):
+            let issueCellReactor = IssueCellReactor(issue: issue)
+            state.sections[0].items.insert(issueCellReactor, at: 0)
+            return state
+        case .deleteComment(_, let parentIndexPath):
+            let issueCellReactor = state.sections[parentIndexPath.section].items[parentIndexPath.item]
+            let updatedIssue = issueCellReactor.currentState.update(commentsCount: issueCellReactor.currentState.comments - 1)
+            let updatedReactor = IssueCellReactor(issue: updatedIssue)
+            state.sections[parentIndexPath.section].items[parentIndexPath.item] = updatedReactor
             return state
         }
     }

@@ -11,7 +11,15 @@ import RxSwift
 import RxAlamofire
 import RxCocoa
 
+enum GithubEvent {
+    case postComment(Model.Comment)
+    case toggleIssue(Model.Issue)
+    case postIssue(Model.Issue)
+    case deleteComment(childIndexPath: IndexPath, parentIndexPath: IndexPath)
+}
+
 protocol GithubServiceType {
+    var githubEvent: PublishSubject<GithubEvent> { get }
     var githubOAuth: OAuth2Swift { get }
     var decoder: JSONDecoder { get }
     func getToken() -> Observable<(String, String)>
@@ -21,14 +29,13 @@ protocol GithubServiceType {
     func postComment(owner: String, repo: String, number: Int, comment: String) -> Observable<Model.Comment>
     func postIssue(owner: String, repo: String, title: String, body: String) -> Observable<Model.Issue>
     func getUserInfo() -> Observable<Model.User>
-    func deleteComment(owner: String, repo: String, commentId: Int) -> Observable<[String: Bool]>
+    func deleteComment(owner: String, repo: String, commentId: Int, indexPath: IndexPath, parentIndexPath: IndexPath) -> Observable<[String: Bool]>
     func editComment(owner: String, repo: String, commentId: Int, body: String) -> Observable<Model.Comment>
 }
 
 final class GithubService: GithubServiceType {
     
-    
-    
+    var githubEvent: PublishSubject<GithubEvent> = PublishSubject()
     
     let githubOAuth: OAuth2Swift = OAuth2Swift(
         consumerKey: "425bdcda7d5df5fddee0",
@@ -88,6 +95,8 @@ final class GithubService: GithubServiceType {
         return GithubAPI.editIssue(owner: owner, repo: repo, number: number).buildRequest(parameters: issueDict).flatMap({ (data: Data) -> Observable<Model.Issue> in
             guard let issue = try? self.decoder.decode(Model.Issue.self, from: data) else { return Observable.error(RxError.noElements) }
             return Observable.just(issue)
+        }).do(onNext: { (issue) in
+            self.githubEvent.onNext(.toggleIssue(issue))
         })
     }
     
@@ -98,6 +107,8 @@ final class GithubService: GithubServiceType {
                 return Observable.error(RxError.noElements)
             }
             return Observable.just(comment)
+        }).do(onNext: { (comment: Model.Comment) in
+            self.githubEvent.onNext(.postComment(comment))
         })
     }
     
@@ -108,6 +119,8 @@ final class GithubService: GithubServiceType {
                 return Observable.error(RxError.noElements)
             }
             return Observable.just(issue)
+        }).do(onNext: { (issue) in
+            self.githubEvent.onNext(.postIssue(issue))
         })
     }
     
@@ -121,13 +134,15 @@ final class GithubService: GithubServiceType {
         })
     }
     
-    func deleteComment(owner: String, repo: String, commentId: Int) -> Observable<[String: Bool]> {
+    func deleteComment(owner: String, repo: String, commentId: Int, indexPath: IndexPath, parentIndexPath: IndexPath) -> Observable<[String: Bool]> {
         let parameters: [String: Any] = [:]
         return GithubAPI.deleteComment(owner: owner, repo: repo, commentId: commentId)
             .buildRequest(parameters: parameters)
             .flatMap({ (data) -> Observable<[String: Bool]> in
                 return Observable.just(["success": true])
-        })
+            }).do(onNext: { _ in
+                self.githubEvent.onNext(.deleteComment(childIndexPath: indexPath, parentIndexPath: parentIndexPath))
+            })
     }
     
     func editComment(owner: String, repo: String, commentId: Int, body: String) -> Observable<Model.Comment> {

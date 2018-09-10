@@ -18,7 +18,7 @@ class MarkDownViewReactor: Reactor {
     
     enum Action {
         case updateMarkDown(String)
-        case deleteComment(owner: String, repo: String, commentId: Int)
+        case deleteComment(owner: String, repo: String, commentId: Int, indexPath: IndexPath, parentIndexPath: IndexPath)
         case updateComment(owner: String, repo: String, commentId: Int, body: String)
     }
     
@@ -42,8 +42,8 @@ class MarkDownViewReactor: Reactor {
         switch action {
         case let .updateMarkDown(markDown):
             return Observable.just(Mutation.updateMarkDown(markDown))
-        case let .deleteComment(owner, repo, commentId):
-            return self.githubService.deleteComment(owner: owner, repo: repo, commentId: commentId)
+        case let .deleteComment(owner, repo, commentId, indexPath, parentIndexPath):
+            return self.githubService.deleteComment(owner: owner, repo: repo, commentId: commentId, indexPath: indexPath, parentIndexPath: parentIndexPath)
                 .flatMap({ (isSuccess) -> Observable<Mutation> in
                     guard let isSuccess = isSuccess["success"] else { return .empty() }
                     return Observable.just(Mutation.deleteComment(isSuccess))
