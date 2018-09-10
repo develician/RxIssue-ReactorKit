@@ -81,6 +81,14 @@ class MarkDownViewController: BaseViewController, View {
         
         self.editButton.rx.tap.subscribe(onNext: { [weak self] _ in
             let alert = UIAlertController(title: nil, message: nil, preferredStyle: UIAlertControllerStyle.actionSheet)
+            alert.addAction(UIAlertAction(title: "Edit", style: UIAlertActionStyle.default, handler: { [weak self] _ in
+                let githubService = reactor.githubService
+                let reactor = EditCommentViewReactor(githubService: githubService)
+                guard let owner = self?.owner, let repo = self?.repo, let comment = self?.comment else { return }
+                let editView = EditCommentViewController(reactor: reactor, comment: comment, owner: owner, repo: repo)
+                let navi = UINavigationController(rootViewController: editView)
+                self?.present(navi, animated: true, completion: nil)
+            }))
             alert.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: { [weak self] _ in
                 self?.deleteFlag.accept(true)
             }))
@@ -100,8 +108,7 @@ class MarkDownViewController: BaseViewController, View {
             .map { (owner, repo, commentId, indexPath, parentIndexPath) -> Reactor.Action in
                 return Reactor.Action.deleteComment(owner: owner, repo: repo, commentId: commentId, indexPath: indexPath, parentIndexPath: parentIndexPath)
         }.bind(to: reactor.action).disposed(by: self.disposeBag)
-        
-        
+
         
         
         reactor.state.map { $0.markDown }
@@ -118,6 +125,14 @@ class MarkDownViewController: BaseViewController, View {
             .filter { $0 }
             .subscribe(onNext: { [weak self] _ in
                 self?.deleteFlag.accept(false)
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: self.disposeBag)
+        
+        reactor.state.map { $0.isDismissed }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .subscribe(onNext: { [weak self] _ in
                 self?.navigationController?.popViewController(animated: true)
             })
             .disposed(by: self.disposeBag)

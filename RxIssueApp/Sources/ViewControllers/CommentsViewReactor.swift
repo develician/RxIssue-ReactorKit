@@ -47,6 +47,7 @@ class CommentsViewReactor: Reactor {
         case updateComment(String)
         case toggleIssue(Model.Issue)
         case deleteComment(IndexPath)
+        case editComment(Model.Comment)
     }
 
     var initialState: State = State()
@@ -109,6 +110,8 @@ class CommentsViewReactor: Reactor {
             return Observable.just(Mutation.toggleIssue(issue))
         case .deleteComment(let indexPath, _):
             return Observable.just(Mutation.deleteComment(indexPath))
+        case .editComment(let comment):
+            return Observable.just(Mutation.editComment(comment))
         default:
             return .empty()
         }
@@ -157,6 +160,13 @@ class CommentsViewReactor: Reactor {
             guard let comments = state.issue?.comments else { return state }
             guard let newIssue = state.issue?.update(commentsCount: comments - 1) else { return state }
             state.issue = newIssue
+            return state
+        case .editComment(let comment):
+            guard let index = state.sections[0].items.index(where: { (reactor) -> Bool in
+                return reactor.currentState.id == comment.id
+            }) else { return state }
+            let reactor = CommentsCellReactor(comment: comment)
+            state.sections[0].items[index] = reactor
             return state
         }
     }

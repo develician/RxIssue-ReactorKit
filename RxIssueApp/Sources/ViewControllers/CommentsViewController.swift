@@ -124,6 +124,8 @@ class CommentsViewController: BaseViewController, View {
     }
     
     func bind(reactor: Reactor) {
+        
+//        self.collectionView.supplementaryView(forElementKind: UICollectionElementKindSectionHeader, at: IndexPath(item: 0, section: 0)).rx
 
         self.collectionView.rx.setDelegate(self).disposed(by: self.disposeBag)
         
@@ -295,7 +297,6 @@ extension CommentsViewController: UICollectionViewDelegateFlowLayout {
         return CGSize(width: collectionView.frame.width, height: descHeight + bodyHeight + 30)
     }
 }
-
 
 
 

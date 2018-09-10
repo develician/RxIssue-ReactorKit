@@ -29,6 +29,7 @@ class PostIssueViewReactor: Reactor {
         var content: String = ""
         var newIssuePosted: Bool = false
         var newIssue: Model.Issue? = nil
+        var isLoading: Bool = false
     }
 
     enum Mutation {
@@ -36,6 +37,7 @@ class PostIssueViewReactor: Reactor {
         case updateTitle(String)
         case updateContent(String)
         case newIssuePost(Model.Issue)
+        case setLoading(Bool)
     }
 
     var initialState: State = State()
@@ -51,10 +53,15 @@ class PostIssueViewReactor: Reactor {
         case let .updateContent(content):
             return Observable.just(Mutation.updateContent(content))
         case let .postIssue(owner, repo, title, body):
-            return self.githubService.postIssue(owner: owner, repo: repo, title: title, body: body)
+            let postIssueObservable = self.githubService.postIssue(owner: owner, repo: repo, title: title, body: body)
                 .flatMap({ (issue: Model.Issue) -> Observable<Mutation> in
                     return Observable.just(Mutation.newIssuePost(issue))
                 })
+            return Observable.concat([
+                    Observable.just(Mutation.setLoading(true)),
+                    postIssueObservable,
+                    Observable.just(Mutation.setLoading(false))
+                ])
         }
     }
 
@@ -73,6 +80,9 @@ class PostIssueViewReactor: Reactor {
         case let .newIssuePost(issue):
             state.newIssuePosted = true
             state.newIssue = issue
+            return state
+        case .setLoading(let isLoading):
+            state.isLoading = isLoading
             return state
         }
     }

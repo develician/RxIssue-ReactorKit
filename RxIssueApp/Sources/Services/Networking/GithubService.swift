@@ -16,6 +16,7 @@ enum GithubEvent {
     case toggleIssue(Model.Issue)
     case postIssue(Model.Issue)
     case deleteComment(childIndexPath: IndexPath, parentIndexPath: IndexPath)
+    case editComment(Model.Comment)
 }
 
 protocol GithubServiceType {
@@ -152,6 +153,8 @@ final class GithubService: GithubServiceType {
             .flatMap({ (data) -> Observable<Model.Comment> in
                 guard let comment = try? self.decoder.decode(Model.Comment.self, from: data) else { return Observable.error(RxError.unknown) }
                 return Observable.just(comment)
+            }).do(onNext: { (comment: Model.Comment) in
+                self.githubEvent.onNext(.editComment(comment))
             })
     }
     

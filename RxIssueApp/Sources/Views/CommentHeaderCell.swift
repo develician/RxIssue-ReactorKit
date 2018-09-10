@@ -197,30 +197,7 @@ class CommentHeaderCell: BaseReusableView, View {
     }
     
     func bind(reactor: Reactor) {
-        let currentState = reactor.currentState
-        let title = currentState.title
-        let state = currentState.state
 
-        self.titleLabel.text = title
-        self.stateButton.backgroundColor = state.color
-        self.stateButton.setTitle("\(state.rawValue)", for: UIControlState.normal)
-
-        let username = currentState.user.login
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        guard let createdAt = currentState.createdAt else { return }
-        let date = dateFormatter.string(from: createdAt)
-        let commentsCount = currentState.comments
-        let desc = "\(username) \(state.rawValue) this issue on \(date) \(commentsCount) comments"
-
-        self.descLabel.text = desc
-
-        guard let url = currentState.user.avatarURL else { return }
-        self.profileImage.kf.setImage(with: url)
-
-        self.bodyDescLabel.text = "\(username) commented on \(date)"
-        self.bodyLabel.text = currentState.body
-        
         self.stateButton.rx.tap.map { _ -> Reactor.Action in
             let issue = reactor.currentState
             print("toggle Issue")
@@ -231,11 +208,32 @@ class CommentHeaderCell: BaseReusableView, View {
             guard let `self` = self else { return }
             self.stateButton.backgroundColor = issue.state.color
             self.stateButton.setTitle("\(issue.state.rawValue)", for: UIControlState.normal)
+            
+            let currentState = reactor.currentState
+            let title = currentState.title
+            let state = currentState.state
+            
+            self.titleLabel.text = title
+            
+            let username = currentState.user.login
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            guard let createdAt = currentState.createdAt else { return }
+            let date = dateFormatter.string(from: createdAt)
+            let commentsCount = currentState.comments
+            let desc = "\(username) \(state.rawValue) this issue on \(date) \(commentsCount) comments"
+            
+            self.descLabel.text = desc
+            
+            guard let url = currentState.user.avatarURL else { return }
+            self.profileImage.kf.setImage(with: url)
+            
+            self.bodyDescLabel.text = "\(username) commented on \(date)"
+            self.bodyLabel.text = currentState.body
+            
+            
         }).disposed(by: self.disposeBag)
         
-    }
-    
-    func update() {
         
     }
     

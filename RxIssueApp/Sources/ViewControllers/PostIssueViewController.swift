@@ -17,6 +17,8 @@ import RxKeyboard
 class PostIssueViewController: BaseViewController, View {
     typealias Reactor = PostIssueViewReactor
     
+    let service: ServiceProviderType = ServiceProvider()
+    
     init(reactor: Reactor, owner: String, repo: String) {
         super.init()
         self.reactor = reactor
@@ -30,20 +32,27 @@ class PostIssueViewController: BaseViewController, View {
     
     let cancelButton: UIBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.cancel, target: nil, action: nil)
     let saveButton: UIBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.save, target: nil, action: nil)
+    let activityIndicatorView: UIActivityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: .gray)
     
     var owner: String?
     var repo: String?
+    var comment: Model.Comment?
+    
+    struct PlaceHolders {
+        static let titleField = "Write Your Issue's Title"
+        static let issueTextView = "Write Your Issue Here..."
+    }
     
     let titleField = UITextField().then {
         $0.borderStyle = .roundedRect
-        $0.placeholder = "Write Your Issue's Title"
+        $0.placeholder = PlaceHolders.titleField
     }
     
     let issueTextView = UITextView().then {
         $0.layer.borderColor = UIColor.groupTableViewBackground.cgColor
         $0.layer.borderWidth = 1.0
         $0.clipsToBounds = true
-        $0.text = "Write Your Issue Here..."
+        $0.text = PlaceHolders.issueTextView
     }
     
     override func viewDidLoad() {
@@ -55,7 +64,7 @@ class PostIssueViewController: BaseViewController, View {
         
         self.view.addSubview(self.titleField)
         self.view.addSubview(self.issueTextView)
-        
+        self.view.addSubview(self.activityIndicatorView)
         self.prepareKeyboardUp()
     }
     
@@ -72,13 +81,24 @@ class PostIssueViewController: BaseViewController, View {
             make.right.equalToSuperview().offset(-16)
             make.bottom.equalToSuperview().offset(-16)
         }
+        
+        self.activityIndicatorView.snp.makeConstraints { (make) in
+            make.top.equalToSuperview()
+            make.left.equalToSuperview()
+            make.right.equalToSuperview()
+            make.bottom.equalToSuperview()
+        }
+        self.activityIndicatorView.layer.backgroundColor = UIColor.black.withAlphaComponent(0.3).cgColor
     }
     
     func bind(reactor: Reactor) {
         
+        self.issueTextView.rx.setDelegate(self).disposed(by: self.disposeBag)
+        
         self.cancelButton.rx.tap.map { Reactor.Action.setDismiss }
             .bind(to: reactor.action)
             .disposed(by: self.disposeBag)
+        
         
         self.titleField.rx.text.flatMap { (title: String?) -> Observable<String> in
             guard let title = title else { return .empty() }
@@ -94,14 +114,24 @@ class PostIssueViewController: BaseViewController, View {
             .bind(to: reactor.action)
             .disposed(by: self.disposeBag)
         
-        self.saveButton.rx.tap.flatMap { [weak self] _ -> Observable<(String, String)> in
+        self.saveButton.rx.tap
+            .filter({ [weak self] _ -> Bool in
+                if reactor.currentState.title.isEmpty || reactor.currentState.content.isEmpty {
+                    let alert = UIAlertController(title: "Please fill your issues..", message: "Fill Your Fields.", preferredStyle: UIAlertControllerStyle.alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self?.present(alert, animated: true, completion: nil)
+                    return false
+                }
+                return true
+            })
+            .flatMap { [weak self] _ -> Observable<(String, String)> in
             guard let repo = self?.repo, let owner = self?.owner else { return .empty() }
             return Observable.just((repo, owner))
             }.map { (repo, owner) -> Reactor.Action in
                 let title = reactor.currentState.title
                 let body = reactor.currentState.content
                 return Reactor.Action.postIssue(owner: owner, repo: repo, title: title, body: body)
-        }.bind(to: reactor.action).disposed(by: self.disposeBag)
+            }.bind(to: reactor.action).disposed(by: self.disposeBag)
         
         reactor.state.map { $0.isDismissed }
             .distinctUntilChanged()
@@ -129,6 +159,10 @@ class PostIssueViewController: BaseViewController, View {
                 self?.dismiss(animated: true, completion: nil)
             })
             .disposed(by: self.disposeBag)
+        
+        reactor.state.map { $0.isLoading }
+            .bind(to: self.activityIndicatorView.rx.isAnimating)
+            .disposed(by: self.disposeBag)
     }
     
     
@@ -145,3 +179,17 @@ class PostIssueViewController: BaseViewController, View {
     }
     
 }
+
+extension PostIssueViewController: UITextViewDelegate {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if textView.text == PlaceHolders.issueTextView {
+            textView.text = ""
+        }
+    }
+}
+
+
+
+
+
+

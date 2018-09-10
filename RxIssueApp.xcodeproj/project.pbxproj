@@ -47,6 +47,8 @@
 		5B10EAA62140EE4B0083292C /* CommentsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B10EAA52140EE4B0083292C /* CommentsCell.swift */; };
 		5B10EAA82140EE520083292C /* CommentsCellReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B10EAA72140EE520083292C /* CommentsCellReactor.swift */; };
 		5B10EAAA2140F7BF0083292C /* Encodable+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B10EAA92140F7BF0083292C /* Encodable+Extension.swift */; };
+		5B4097A02146BF3700FBA429 /* EditCommentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B40979F2146BF3700FBA429 /* EditCommentViewController.swift */; };
+		5B4097A22146BF4700FBA429 /* EditCommentViewReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4097A12146BF4700FBA429 /* EditCommentViewReactor.swift */; };
 		5BFD57EF21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57EE21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift */; };
 		5BFD57F12141165A0014AEA0 /* PostIssueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F02141165A0014AEA0 /* PostIssueViewController.swift */; };
 		5BFD57F3214116630014AEA0 /* PostIssueViewReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD57F2214116630014AEA0 /* PostIssueViewReactor.swift */; };
@@ -99,6 +101,8 @@
 		5B10EAA52140EE4B0083292C /* CommentsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsCell.swift; sourceTree = "<group>"; };
 		5B10EAA72140EE520083292C /* CommentsCellReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsCellReactor.swift; sourceTree = "<group>"; };
 		5B10EAA92140F7BF0083292C /* Encodable+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Encodable+Extension.swift"; sourceTree = "<group>"; };
+		5B40979F2146BF3700FBA429 /* EditCommentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCommentViewController.swift; sourceTree = "<group>"; };
+		5B4097A12146BF4700FBA429 /* EditCommentViewReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCommentViewReactor.swift; sourceTree = "<group>"; };
 		5BFD57EE21410FD60014AEA0 /* SnapKit+KeyboardConstraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SnapKit+KeyboardConstraints.swift"; sourceTree = "<group>"; };
 		5BFD57F02141165A0014AEA0 /* PostIssueViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIssueViewController.swift; sourceTree = "<group>"; };
 		5BFD57F2214116630014AEA0 /* PostIssueViewReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostIssueViewReactor.swift; sourceTree = "<group>"; };
@@ -199,6 +203,8 @@
 				5BFD57F2214116630014AEA0 /* PostIssueViewReactor.swift */,
 				5BFD57F6214147BE0014AEA0 /* MarkDownViewController.swift */,
 				5BFD57F82141487C0014AEA0 /* MakrDownViewReactor.swift */,
+				5B40979F2146BF3700FBA429 /* EditCommentViewController.swift */,
+				5B4097A12146BF4700FBA429 /* EditCommentViewReactor.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -453,8 +459,10 @@
 				5B0F705A213F980A00549016 /* AppDelegate.swift in Sources */,
 				5B10EA982140E6580083292C /* LoadMoreCell.swift in Sources */,
 				5B0F7083213FA5AF00549016 /* UserDefaultsKey.swift in Sources */,
+				5B4097A02146BF3700FBA429 /* EditCommentViewController.swift in Sources */,
 				5BFD57F12141165A0014AEA0 /* PostIssueViewController.swift in Sources */,
 				5B10EA8B2140D0720083292C /* IssueCellReactor.swift in Sources */,
+				5B4097A22146BF4700FBA429 /* EditCommentViewReactor.swift in Sources */,
 				5B10EA962140E1D50083292C /* UIScrollView+Rx.swift in Sources */,
 				5BFD57F3214116630014AEA0 /* PostIssueViewReactor.swift in Sources */,
 				5BFD57F92141487C0014AEA0 /* MakrDownViewReactor.swift in Sources */,

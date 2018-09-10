@@ -27,12 +27,14 @@ class MarkDownViewReactor: Reactor {
         var deleted: Bool = false
         var updated: Bool = false
         var updatedComment: Model.Comment? = nil
+        var isDismissed: Bool = false
     }
 
     enum Mutation {
         case updateMarkDown(String)
         case deleteComment(Bool)
         case updateComment(Model.Comment)
+        case dismiss
     }
 
     var initialState: State = State()
@@ -56,6 +58,24 @@ class MarkDownViewReactor: Reactor {
         }
     }
     
+    func transform(mutation: Observable<Mutation>) -> Observable<Mutation> {
+        let githubEventMutation = self.githubService.githubEvent.flatMap { [weak self] (githubEvent) -> Observable<Mutation> in
+            self?.mutate(githubEvent: githubEvent) ?? .empty()
+        }
+        
+        return Observable.of(mutation, githubEventMutation).merge()
+    }
+    
+    private func mutate(githubEvent: GithubEvent) -> Observable<Mutation> {
+        let state = self.currentState
+        switch githubEvent {
+        case .editComment(_):
+            return Observable.just(Mutation.dismiss)
+        default:
+            return .empty()
+        }
+    }
+    
     func reduce(state: State, mutation: Mutation) -> State {
         var state = state
         switch mutation {
@@ -68,6 +88,9 @@ class MarkDownViewReactor: Reactor {
         case let .updateComment(comment):
             state.updatedComment = comment
             state.updated = true
+            return state
+        case .dismiss:
+            state.isDismissed = true
             return state
         }
     }

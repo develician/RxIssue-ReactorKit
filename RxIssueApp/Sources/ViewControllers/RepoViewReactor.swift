@@ -68,6 +68,7 @@ class RepoViewReactor: Reactor {
         switch mutation {
         case .logout:
             self.provider.userDefaultsService.set(value: nil, forKey: .token)
+            self.provider.userDefaultsService.set(value: nil, forKey: .userInfo)
             return state
         case let .updateOwner(owner):
             state.owner = owner
